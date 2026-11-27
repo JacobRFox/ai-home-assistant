@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="module" src="/static/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 11 12 4l9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg>
+      </span>
+      <h1 id="assistant-name">Home Assistant</h1>
+    </div>
+    <div class="meta">
+      <span class="pill" id="model" title="Active model">…</span>
+      <span class="status" id="connection" title="Live updates"><i></i><span>Connecting</span></span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="plugins" id="plugins" aria-label="Plugins"></section>
+
+    <aside class="chat card" aria-label="Chat">
+      <div class="card-head">
+        <h2>Chat</h2>
+        <button class="btn btn-ghost" id="chat-reset" type="button">New chat</button>
+      </div>
+      <div class="chat-log" id="chat-log" aria-live="polite">
+        <p class="empty">Ask me to do something, like “turn on the kitchen light” or “add milk to the shopping list”. Type /help for commands.</p>
+      </div>
+      <form class="chat-form" id="chat-form">
+        <input id="chat-input" type="text" placeholder="Message…" autocomplete="off" aria-label="Message">
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </aside>
+  </main>
+</body>
+</html>

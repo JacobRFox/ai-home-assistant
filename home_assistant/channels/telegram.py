@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 from typing import Any
 
 from telegram import Update
@@ -96,11 +97,16 @@ class TelegramChannel(Channel):
             await asyncio.sleep(4)
 
     def run(self) -> None:
-        logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s", level=logging.INFO)
         logging.getLogger("httpx").setLevel(logging.WARNING)  # it logs every poll, including the token URL
         if not self.allowed:
             log.warning("No allowed_user_ids set: the bot will reject everyone and reply with their user id.")
         app = Application.builder().token(self.token).build()
         app.add_handler(MessageHandler(filters.TEXT, self._on_message))
         log.info("Telegram bot running (model: %s). Ctrl+C to stop.", self.assistant.model_name)
-        app.run_polling(allowed_updates=Update.ALL_TYPES)
+        if threading.current_thread() is threading.main_thread():
+            app.run_polling(allowed_updates=Update.ALL_TYPES)
+        else:
+            # Running alongside another channel: give this thread its own event loop,
+            # and leave Ctrl+C handling to the main thread.
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            app.run_polling(allowed_updates=Update.ALL_TYPES, stop_signals=None)

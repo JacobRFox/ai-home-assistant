@@ -1,4 +1,4 @@
-"""Communication channels. Each one adapts a transport (terminal, Telegram, ...)
+"""Communication channels. Each one adapts a transport (terminal, Telegram, web, ...)
 to the shared HomeAssistant core.
 
 To add a channel: subclass `Channel`, implement `run()`, and register it in CHANNELS.
@@ -24,8 +24,13 @@ def _telegram():
     return TelegramChannel
 
 
+def _web():
+    from .web import WebChannel
+    return WebChannel
+
+
 # Lazy so a channel's dependencies are only imported when it's used.
-CHANNELS = {"cli": _cli, "telegram": _telegram}
+CHANNELS = {"cli": _cli, "telegram": _telegram, "web": _web}
 
 
 def get_channel(name: str, assistant: "HomeAssistant", cfg: dict, **kwargs) -> Channel:

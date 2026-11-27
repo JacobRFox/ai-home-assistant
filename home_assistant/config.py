@@ -15,13 +15,18 @@ DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
 ENV_OVERRIDES = {
     "HA_MODEL": ("model", "name"),
     "OLLAMA_HOST": ("model", "base_url"),
-    "HA_BACKEND": ("smart_home", "backend"),
-    "HASS_URL": ("smart_home", "homeassistant", "url"),
-    "HASS_TOKEN": ("smart_home", "homeassistant", "token"),
+    "HA_BACKEND": ("plugins", "smart_home", "backend"),
+    "HASS_URL": ("plugins", "smart_home", "homeassistant", "url"),
+    "HASS_TOKEN": ("plugins", "smart_home", "homeassistant", "token"),
+    "DIRIGERA_HOST": ("plugins", "smart_home", "dirigera", "host"),
+    "DIRIGERA_TOKEN": ("plugins", "smart_home", "dirigera", "token"),
     "TELEGRAM_BOT_TOKEN": ("channels", "telegram", "bot_token"),
     "TELEGRAM_ALLOWED_USERS": ("channels", "telegram", "allowed_user_ids"),  # comma-separated
+    "HA_PLUGINS": ("plugins", "enabled"),  # comma-separated
+    "HA_WEB_HOST": ("channels", "web", "host"),
+    "HA_WEB_PORT": ("channels", "web", "port"),
 }
-LIST_KEYS = {"TELEGRAM_ALLOWED_USERS"}
+LIST_KEYS = {"TELEGRAM_ALLOWED_USERS", "HA_PLUGINS"}
 
 
 def load_config(path: str | Path | None = None) -> dict[str, Any]:
@@ -45,8 +50,10 @@ def load_config(path: str | Path | None = None) -> dict[str, Any]:
         # OLLAMA_HOST is often set as "0.0.0.0:11434"
         cfg["model"]["base_url"] = f"http://{base_url}"
 
-    data_file = Path(cfg.get("data_file", "data/assistant_data.json"))
-    if not data_file.is_absolute():
-        data_file = PROJECT_ROOT / data_file
-    cfg["data_file"] = data_file
+    data_dir = Path(cfg.get("data_dir", "data"))
+    if not data_dir.is_absolute():
+        data_dir = PROJECT_ROOT / data_dir
+    cfg["data_dir"] = data_dir  # each plugin stores data/<plugin_id>.json here
+    if not isinstance(cfg.get("plugins"), dict):
+        cfg["plugins"] = {}
     return cfg

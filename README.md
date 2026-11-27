@@ -1,8 +1,9 @@
 # Local Home Assistant (LangChain + Ollama)
 
-A private, fully local home assistant. A LangChain agent (`create_agent`) drives an
-open-source model served by Ollama and calls tools to control smart-home devices,
-manage a shopping list and notes, and tell the time.
+A private, fully local home assistant built from plugins. A LangChain agent
+(`create_agent`) drives an open-source model served by Ollama. Each plugin adds
+tools the AI can call, a backend API, and a dashboard widget. You can talk to it
+from a web dashboard, Telegram or the terminal.
 
 ## Setup
 
@@ -16,28 +17,47 @@ ollama pull qwen3:8b
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 3. Run
-python -m home_assistant -v
+# 3. Run the dashboard (and optionally Telegram) on one shared assistant
+python -m home_assistant web telegram
+# → http://localhost:8765
 ```
 
-## Customizing the model
+## Plugins
 
-- **Pick any model**: edit `model.name` in `config.yaml`, pass `--model llama3.1:8b`,
-  set `HA_MODEL=...`, or type `/model <name>` while chatting. The model must support
-  tool calling (qwen3, llama3.1/3.2, mistral-nemo, granite3.3, ...).
-- **Build your own**: edit `Modelfile` (base model, parameters, persona), then
-  `ollama create home-assistant -f Modelfile` and set `model.name: home-assistant`.
-- **Persona**: `assistant.name` / `assistant.system_prompt` in `config.yaml`.
+Everything the assistant can do comes from plugins. A plugin can provide any of:
+
+| Part | What it does |
+|---|---|
+| **AI tools** | LangChain tools so the model can operate the plugin |
+| **Backend** | A FastAPI router mounted at `/api/plugins/<id>/` |
+| **Frontend** | A web component shown as a card on the dashboard |
+| **Commands** | Slash commands for every chat channel (e.g. `/devices`) |
+| **Prompt** | Notes appended to the AI's system prompt |
+
+The plugin state is the same everywhere. If you say "turn off the kitchen light"
+in Telegram, the dashboard switch flips live.
+
+Built-ins: `smart_home`, `shopping_list`, `notes`, `clock`. Choose which load with
+`plugins.enabled` in `config.yaml`, or with `HA_PLUGINS=clock,notes`.
+
+**Writing your own:** see [PLUGINS.md](PLUGINS.md). Plugins can live in `./plugins/`,
+be pip-installed packages, or ship with the app.
 
 ## Channels
 
-Run `python -m home_assistant <channel>`. Every channel shares the same agent and
-slash commands (`/model`, `/models`, `/devices`, `/reset`, `/help`), and each
-user/chat gets its own conversation history.
+Run `python -m home_assistant <channel> [<channel> ...]`. Channels started together
+share one assistant: the same devices, plugins and live updates. Each user or chat
+still gets its own conversation history.
 
-### Terminal — `cli` (default)
+| Channel | |
+|---|---|
+| `web` | Dashboard with every plugin's UI and a chat panel. Serves on `127.0.0.1:8765`, API docs at `/api/docs` |
+| `telegram` | Telegram bot (see below) |
+| `cli` | Terminal chat (default) |
 
-### Telegram — `telegram`
+Shared commands: `/model`, `/models`, `/plugins`, `/reset`, `/help`, plus every plugin's commands.
+
+### Telegram
 
 1. In Telegram, message **@BotFather**, send `/newbot`, and copy the token.
 2. `export TELEGRAM_BOT_TOKEN=123456:ABC...`
@@ -48,6 +68,11 @@ user/chat gets its own conversation history.
 It uses long polling, so no public URL or port forwarding is needed. Messages from
 anyone not on the allowlist are rejected, so strangers can't control your home.
 
+### Web dashboard security
+
+The dashboard has no login. It listens on localhost only by default. Set
+`channels.web.host: 0.0.0.0` only on a network you trust.
+
 ### Adding a channel
 
 Create `home_assistant/channels/<name>.py` with a `Channel` subclass that implements
@@ -55,19 +80,68 @@ Create `home_assistant/channels/<name>.py` with a `Channel` subclass that implem
 (plus `self.handle_command(...)` for slash commands). Then register it in
 `channels/__init__.py`.
 
-## Real devices (Home Assistant)
+## Testing without Ollama
 
-Set `smart_home.backend: homeassistant`, your instance URL, and a long-lived access
-token (Profile → Security in Home Assistant), or use `HA_BACKEND`, `HASS_URL`,
-`HASS_TOKEN`. The default `simulated` backend uses demo devices.
+Add `--fake` (or set `HA_FAKE_LLM=1`) to swap the LLM for a keyword-matching stand-in
+(`home_assistant/fake_llm.py`). Channels, plugins, devices and memory all run for real:
+
+```bash
+python -m home_assistant web telegram --fake
+```
+
+It understands simple commands such as "turn on the kitchen light", "set bedroom
+brightness to 30", "add milk and eggs to the shopping list" and "what time is it".
+Once Ollama is ready, send `/model qwen3:8b` to switch to the real model without restarting.
+
+## Customizing the model
+
+- **Pick any model**: edit `model.name` in `config.yaml`, pass `--model llama3.1:8b`,
+  set `HA_MODEL=...`, or type `/model <name>` while chatting. The model must support
+  tool calling (qwen3, llama3.1/3.2, mistral-nemo, granite3.3, ...).
+- **Build your own**: edit `Modelfile` (base model, parameters, persona), then
+  `ollama create home-assistant -f Modelfile` and set `model.name: home-assistant`.
+- **Persona**: `assistant.name` / `assistant.system_prompt` in `config.yaml`.
+
+## Real devices
+
+The smart-home plugin talks to one backend: `simulated` (demo devices, the default),
+`dirigera`, or `homeassistant`. All three work with the same AI tools, dashboard card and
+commands (`/devices`, `/scene`).
+
+### IKEA DIRIGERA
+
+Supports lights (on/off, brightness), outlets, blinds, air purifiers, scenes, and
+read-only sensors (VINDSTYRKA, door/window, leak, motion). Everything stays on your network.
+Changes made in the IKEA Home app or with remotes show up on the dashboard live.
+
+1. Find the hub's IP address in your router's list of connected devices. Giving the hub
+   a fixed IP (DHCP reservation) means it won't change later.
+2. Pair once. When prompted, press the action button on the bottom of the hub:
+   ```bash
+   python -m home_assistant.builtin_plugins.smart_home.pair_dirigera 192.168.1.50
+   ```
+3. Add the printed `DIRIGERA_HOST`, `DIRIGERA_TOKEN` and `HA_BACKEND=dirigera` exports to
+   your shell. Keep the token out of `config.yaml`, since anyone with it controls your home.
+
+Devices with the same name in different rooms are addressed as "kitchen ceiling light".
+The integration uses the community [`dirigera`](https://github.com/Leggin/dirigera)
+library. The hub uses a self-signed certificate, so its HTTPS certificate isn't verified.
+
+### Home Assistant
+
+Set `plugins.smart_home.backend: homeassistant`, your instance URL, and a long-lived
+access token (Profile → Security in Home Assistant), or use `HA_BACKEND`, `HASS_URL`,
+`HASS_TOKEN`.
 
 ## Layout
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
-| `home_assistant/agent.py` | ChatOllama + LangChain agent with conversation memory |
-| `home_assistant/tools.py` | Tools the model can call (add new `@tool` functions here) |
-| `home_assistant/devices.py` | Simulated and Home Assistant REST backends |
-| `home_assistant/channels/` | Ways to talk to it: `cli.py`, `telegram.py`, shared commands in `base.py` |
-| `home_assistant/__main__.py` | Entry point: picks the channel |
+| `home_assistant/agent.py` | Assistant core: loads plugins, builds the LangChain agent |
+| `home_assistant/plugins/` | Plugin API (`Plugin`, `PluginError`, `Command`) and loader |
+| `home_assistant/builtin_plugins/` | Built-in plugins, each with tools, backend and `frontend/` |
+| `home_assistant/channels/` | `web.py`, `telegram.py`, `cli.py`; shared commands in `base.py` |
+| `home_assistant/web/` | Dashboard shell and `sdk.js` for plugin frontends |
+| `home_assistant/events.py`, `storage.py` | Event bus and per-plugin JSON storage |
+| `plugins/` | Your own plugins (auto-discovered) |
 | `config.yaml`, `Modelfile` | Configuration and custom model definition |

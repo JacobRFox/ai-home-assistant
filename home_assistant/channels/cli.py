@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from .base import HELP, Channel
+from .base import Channel
 
 
 class CLIChannel(Channel):
@@ -24,8 +24,8 @@ class CLIChannel(Channel):
                 print(f"  [{'→' if kind == 'tool' else '←'}] {content}")
 
     def run(self) -> None:
-        print(f"{self.name} ready (model: {self.assistant.model_name}, "
-              f"backend: {self.cfg['smart_home']['backend']}). /help for commands.\n")
+        plugins = ", ".join(p.id for p in self.assistant.plugins)
+        print(f"{self.name} ready (model: {self.assistant.model_name}; plugins: {plugins}). /help for commands.\n")
         while True:
             try:
                 text = input("You: ").strip()
@@ -45,7 +45,7 @@ class CLIChannel(Channel):
                     out = self.handle_command(text, self.conversation)
                 except Exception as e:
                     out = f"Error: {e}"
-                print(out if out is not None else HELP + "\n/verbose - toggle tool-call display\n/quit - exit")
+                print(out if out is not None else self.help_text() + "\n/verbose - toggle tool-call display\n/quit - exit")
                 continue
             try:
                 self.respond(text)

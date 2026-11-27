@@ -13,30 +13,48 @@ model:
 
 assistant:
   name: Jarvis
+  # Plugins append their own notes to this prompt.
   system_prompt: |
     You are {name}, a helpful, concise home assistant running locally.
-    You can control smart-home devices, manage a shopping list and notes,
-    and tell the time. Use tools whenever an action or live information is
-    needed; never pretend you performed an action. If a device name is
-    ambiguous, call list_devices first. Keep spoken-style answers short.
+    Use tools whenever an action or live information is needed; never
+    pretend you performed an action. Keep spoken-style answers short.
 
-# Smart-home backend:
-#   simulated      - in-memory demo devices (works out of the box)
-#   homeassistant  - real devices via the Home Assistant REST API
-smart_home:
-  backend: simulated                       # [HA_BACKEND]
-  homeassistant:
-    url: http://homeassistant.local:8123   # [HASS_URL]
-    token: ""                              # [HASS_TOKEN] long-lived access token
+plugins:
+  # Omit `enabled` to load every plugin found. Order sets the dashboard layout.
+  enabled: [smart_home, shopping_list, notes, clock]   # [HA_PLUGINS] e.g. "clock,notes"
+  disabled: []
+  # Extra folders to search for plugins (each subfolder is one plugin).
+  paths: [plugins]
 
-# Ways to talk to the assistant: python -m home_assistant [cli|telegram]
+  # Per-plugin settings: each plugin receives its own section.
+  smart_home:
+    # simulated     - in-memory demo devices (works out of the box)
+    # homeassistant - real devices via the Home Assistant REST API
+    # dirigera      - an IKEA DIRIGERA hub on your local network
+    backend: simulated                       # [HA_BACKEND]
+    homeassistant:
+      url: http://homeassistant.local:8123   # [HASS_URL]
+      token: ""                              # [HASS_TOKEN] long-lived access token
+    dirigera:
+      # Pair once: python -m home_assistant.builtin_plugins.smart_home.pair_dirigera <hub-ip>
+      host: ""                               # [DIRIGERA_HOST] hub IP address
+      token: ""                              # [DIRIGERA_TOKEN] keep it in the env, not here
+      include_sensors: true                  # show temperature, door, leak and motion sensors
+
+# Ways to talk to the assistant: python -m home_assistant [web] [telegram] [cli]
 channels:
+  web:
+    # Dashboard + chat. There is no login, so keep it on localhost unless
+    # your network is trusted.
+    host: 127.0.0.1          # [HA_WEB_HOST]
+    port: 8765               # [HA_WEB_PORT]
   telegram:
     # From @BotFather. Prefer the env var so the token stays out of this file.
     bot_token: ""            # [TELEGRAM_BOT_TOKEN]
     # Only these Telegram user ids may use the bot (it controls your home!).
     # Message the bot once and it will reply with your id.
+    # Prefer the env var so your ids stay out of this (committed) file.
     allowed_user_ids: []     # [TELEGRAM_ALLOWED_USERS] e.g. "12345,67890"
 
-# Where notes and the shopping list are saved.
-data_file: data/assistant_data.json
+# Each plugin stores its data in <data_dir>/<plugin_id>.json.
+data_dir: data
