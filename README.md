@@ -116,12 +116,15 @@ Changes made in the IKEA Home app or with remotes show up on the dashboard live.
 
 1. Find the hub's IP address in your router's list of connected devices. Giving the hub
    a fixed IP (DHCP reservation) means it won't change later.
-2. Pair once. When prompted, press the action button on the bottom of the hub:
+2. Pair once. Run this, then press the action button on the bottom of the hub (there may
+   be no visible reaction; the script waits up to 2 minutes):
    ```bash
    python -m home_assistant.builtin_plugins.smart_home.pair_dirigera 192.168.1.50
    ```
-3. Add the printed `DIRIGERA_HOST`, `DIRIGERA_TOKEN` and `HA_BACKEND=dirigera` exports to
-   your shell. Keep the token out of `config.yaml`, since anyone with it controls your home.
+   It saves `DIRIGERA_HOST`, `DIRIGERA_TOKEN` and `HA_BACKEND=dirigera` to `.env` in the
+   project folder (git-ignored, owner-only), which the app loads automatically. Use
+   `--print` to show them instead. Keep the token out of `config.yaml`, since anyone with
+   it controls your home.
 
 Devices with the same name in different rooms are addressed as "kitchen ceiling light".
 The integration uses the community [`dirigera`](https://github.com/Leggin/dirigera)

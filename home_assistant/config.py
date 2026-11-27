@@ -28,8 +28,24 @@ ENV_OVERRIDES = {
 }
 LIST_KEYS = {"TELEGRAM_ALLOWED_USERS", "HA_PLUGINS"}
 
+# Secrets (tokens, user ids) can live here instead of the shell; it's git-ignored.
+ENV_FILE = PROJECT_ROOT / ".env"
+
+
+def load_env_file(path: Path = ENV_FILE) -> None:
+    """Load KEY=value lines into os.environ. Variables already set in the shell win."""
+    if not path.is_file():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.removeprefix("export ").split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+
 
 def load_config(path: str | Path | None = None) -> dict[str, Any]:
+    load_env_file()
     path = Path(path) if path else DEFAULT_CONFIG
     with open(path) as f:
         cfg: dict[str, Any] = yaml.safe_load(f) or {}
