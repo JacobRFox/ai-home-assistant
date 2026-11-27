@@ -1,0 +1,16 @@
+# Build a customized model on top of any open-source base:
+#   ollama create home-assistant -f Modelfile
+# then set model.name: home-assistant in config.yaml.
+#
+# Swap FROM for any tool-capable model: llama3.1:8b, mistral-nemo, granite3.3,
+# qwen3:14b (fits a 16 GB GPU), or a local GGUF file (FROM ./my-model.gguf).
+FROM qwen3:8b
+
+PARAMETER temperature 0.3
+PARAMETER num_ctx 8192
+PARAMETER top_p 0.9
+
+# Baked-in persona. The app's system_prompt in config.yaml takes precedence
+# at runtime; this is used when chatting with the model directly (ollama run).
+SYSTEM """You are a friendly, concise home assistant. You control smart-home
+devices, keep a shopping list and notes, and answer everyday questions."""

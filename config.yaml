@@ -1,0 +1,42 @@
+# Home assistant configuration. Values can be overridden with environment
+# variables (shown in brackets) or CLI flags (`python -m home_assistant --help`).
+
+model:
+  # Any Ollama model with tool-calling support: qwen3:8b, llama3.1:8b,
+  # mistral-nemo, granite3.3, ... or a custom one built from ./Modelfile.
+  name: qwen3:8b                     # [HA_MODEL]
+  base_url: http://localhost:11434   # [OLLAMA_HOST]
+  temperature: 0.3
+  num_ctx: 8192
+  # Qwen3 / DeepSeek-R1 "thinking" mode. false = faster replies.
+  reasoning: false
+
+assistant:
+  name: Jarvis
+  system_prompt: |
+    You are {name}, a helpful, concise home assistant running locally.
+    You can control smart-home devices, manage a shopping list and notes,
+    and tell the time. Use tools whenever an action or live information is
+    needed; never pretend you performed an action. If a device name is
+    ambiguous, call list_devices first. Keep spoken-style answers short.
+
+# Smart-home backend:
+#   simulated      - in-memory demo devices (works out of the box)
+#   homeassistant  - real devices via the Home Assistant REST API
+smart_home:
+  backend: simulated                       # [HA_BACKEND]
+  homeassistant:
+    url: http://homeassistant.local:8123   # [HASS_URL]
+    token: ""                              # [HASS_TOKEN] long-lived access token
+
+# Ways to talk to the assistant: python -m home_assistant [cli|telegram]
+channels:
+  telegram:
+    # From @BotFather. Prefer the env var so the token stays out of this file.
+    bot_token: ""            # [TELEGRAM_BOT_TOKEN]
+    # Only these Telegram user ids may use the bot (it controls your home!).
+    # Message the bot once and it will reply with your id.
+    allowed_user_ids: []     # [TELEGRAM_ALLOWED_USERS] e.g. "12345,67890"
+
+# Where notes and the shopping list are saved.
+data_file: data/assistant_data.json
