@@ -33,6 +33,8 @@ class HomeAssistant:
         self.events = EventBus()
         self.plugins = PluginManager(cfg, self.events)
         self.plugins.load()
+        for plugin in self.plugins:
+            plugin.ctx.assistant = self
         self.tools = self.plugins.tools()
         self.memory = InMemorySaver()  # keeps conversation history per thread
         # conversation key (e.g. "cli", "telegram:123") -> current LangGraph thread id

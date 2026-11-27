@@ -49,6 +49,9 @@ class PluginContext:
     events: "EventBus"
     log: logging.Logger
     app_config: dict[str, Any] = field(default_factory=dict)
+    # The HomeAssistant core, set once all plugins are loaded. Lets input plugins
+    # (e.g. voice) talk to the AI: self.ctx.assistant.chat(text, conversation)
+    assistant: Any = None
 
     def emit(self, name: str, data: Any = None) -> None:
         """Publish `<plugin_id>.<name>`; the dashboard and other plugins can react to it."""

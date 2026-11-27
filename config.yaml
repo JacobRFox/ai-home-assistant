@@ -21,7 +21,7 @@ assistant:
 
 plugins:
   # Omit `enabled` to load every plugin found. Order sets the dashboard layout.
-  enabled: [smart_home, shopping_list, notes, clock]   # [HA_PLUGINS] e.g. "clock,notes"
+  enabled: [voice, smart_home, shopping_list, notes, clock]   # [HA_PLUGINS] e.g. "clock,notes"
   disabled: []
   # Extra folders to search for plugins (each subfolder is one plugin).
   paths: [plugins]
@@ -40,6 +40,17 @@ plugins:
       host: ""                               # [DIRIGERA_HOST] hub IP address
       token: ""                              # [DIRIGERA_TOKEN] keep it in the env, not here
       include_sensors: true                  # show temperature, door, leak and motion sensors
+
+  voice:
+    # Needs: pip install -r requirements-voice.txt. Used by the web dashboard's Voice card.
+    # Built-in wake words: hey_jarvis, alexa, hey_mycroft, ...; or a path to a custom .onnx model.
+    wake_word: hey_jarvis
+    threshold: 0.5                 # 0-1: raise if it wakes by mistake, lower if it misses you
+    stt_model: base.en             # Whisper size: tiny.en, base.en, small.en, medium.en
+    device: auto                   # auto (GPU if available), cuda, or cpu
+    language: en
+    silence_seconds: 0.8           # pause that ends a command
+    max_command_seconds: 10
 
 # Ways to talk to the assistant: python -m home_assistant [web] [telegram] [cli]
 channels:

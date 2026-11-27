@@ -69,6 +69,15 @@ export function on(type, callback) {
 export const isConnected = () => connected;
 
 /**
+ * Show a message in the dashboard's chat panel.
+ * role: 'user' | 'assistant' | 'error'. steps: [{kind, content}] tool calls, as /api/chat returns.
+ * pending: true shows a placeholder (e.g. "Thinking…") that the next posted message replaces.
+ */
+export function postToChat(role, text, { steps = [], pending = false } = {}) {
+  window.dispatchEvent(new CustomEvent('assistant-chat', { detail: { role, text, steps, pending } }));
+}
+
+/**
  * Base class for plugin UIs. Override `init()` (may be async). Inside you get:
  *   this.pluginId                 the plugin's id
  *   this.api.get/post/put/del     calls to the plugin's backend

@@ -52,6 +52,7 @@ class TimersPlugin(Plugin):
         # self.ctx.store   -> persistent JSON storage, private to the plugin
         # self.ctx.emit()  -> publish "timers.<name>" events to the dashboard
         # self.ctx.log     -> a logger
+        # self.ctx.assistant.chat(text, conversation) -> talk to the AI (for input plugins like voice)
         self.default_minutes = self.ctx.config.get("default_minutes", 5)
 
     # 1. Shared logic. Tools, routes and commands all call these methods,
@@ -154,6 +155,7 @@ What `PluginElement` gives you:
 | `this.listen(name, cb)` | Subscribes to `<id>.<name>` events; cleaned up automatically |
 | `this.run(asyncFn)` | Runs an action and shows any error in the card |
 | `this.notify(message, isError)` | Shows a status line in the card |
+| `postToChat(role, text, {steps, pending})` | Shows a message in the dashboard chat (import from the SDK) |
 | `esc(text)` | Escapes text before you put it in `innerHTML`; always use it for data |
 
 Shared CSS classes from the dashboard: `list`, `row`, `grow`, `stack`, `muted`,

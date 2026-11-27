@@ -93,6 +93,14 @@ function addMessage(role, text, steps = []) {
   return msg;
 }
 
+// Plugins post into the chat via postToChat() in the SDK (e.g. voice transcripts and replies).
+window.addEventListener('assistant-chat', (e) => {
+  const { role, text, steps, pending } = e.detail;
+  log.querySelector('.msg.pending.from-plugin')?.remove();
+  const msg = addMessage(role, text, steps ?? []);
+  if (pending) msg.classList.add('pending', 'from-plugin');
+});
+
 $('#chat-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const input = $('#chat-input');

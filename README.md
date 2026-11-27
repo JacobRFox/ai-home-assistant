@@ -57,6 +57,28 @@ still gets its own conversation history.
 
 Shared commands: `/model`, `/models`, `/plugins`, `/reset`, `/help`, plus every plugin's commands.
 
+### Voice (wake word)
+
+The dashboard's **Voice** card listens hands-free: say "Hey Jarvis", then your
+request. The browser only captures the microphone and streams it to this app; the
+wake word ([openWakeWord](https://github.com/dscripka/openWakeWord)) and speech-to-text
+([faster-whisper](https://github.com/SYSTRAN/faster-whisper)) both run locally.
+Replies show in the chat and are read aloud with the browser's voice (switchable off).
+
+```bash
+pip install -r requirements-voice.txt
+python -m home_assistant web      # then click "Start listening" on the Voice card
+```
+
+- **Talk now** skips the wake word.
+- The first start downloads the Whisper model (~145 MB for `base.en`).
+- Settings live under `plugins.voice` in `config.yaml`: wake word, sensitivity, Whisper
+  model size, and the pause that ends a command.
+- **Custom wake words:** train one with openWakeWord and set `wake_word` to the `.onnx` path.
+- Whisper uses the GPU when CUDA libraries are available, otherwise the CPU.
+- Browsers only allow the microphone on `localhost` or HTTPS, so open the dashboard via
+  `http://localhost:8765`.
+
 ### Telegram
 
 1. In Telegram, message **@BotFather**, send `/newbot`, and copy the token.
